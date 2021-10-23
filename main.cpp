@@ -7,40 +7,60 @@
 #include <cmath>
 #include <iomanip>
 #include <algorithm>
+#include <map>
 using namespace std;
 
-class TreeNode{
-    private:
-        int count;
-        string name;
-        TreeNode *link;
-        TreeNode *parent;
-        TreeNode *children;
-    public:
-    //     int addCount(string name){
-    //         return ++count;
-    //     }
-        
+struct FPnode{
+    string name;
+    int frequent;
+    FPnode* link;
+    FPnode* parent;
+    FPnode* child;
+    void addCount(FPnode x){
+            x.frequent += 1;
+        }
+    int getCount(FPnode x){
+        return x.frequent;
+    }
 };
+
 class FPtree{
     private:
-        vector<vector<int>> transactions;
-        vector<TreeNode*> a[20]; //todo : should change to transaction.size() but how?
+        FPnode* root;
+        vector<int> headerTable; // maybe map??
+        long support; //min-support
+        map<string,int> Itemfrequent; 
+        // vector<vector<int>> transactions;
+    // FPtree(){
+
+    // }
     public:
-        FPtree(){
-            
-        }
-        void createFPtree(vector<vector<int>> transactions,double minSup){
-            for(int i=0;i<transactions.size();i++){
-                
+        // void addCount(FPnode x){
+        //     x.frequent += 1;
+        // }
+        // int getCount(FPnode x){
+        //     return x.frequent;
+        // }
+        
+        void scanDB(vector<vector<int>> transactions){
+            for(int i =0;i<transactions.size();i++){
+                for(int j=0;j<transactions[i].size();j++){
+                    cout<<transactions[i][j];
+                }
+                cout<<endl;
             }
         }
 };
+
+
 class InputReader{
     private:
         ifstream filein;
         vector<vector<int>> transactions;
     public:
+        InputReader(){
+            cout<<"Wanna show something?"<<endl;
+        }
         InputReader(string filename) {
             filein.open(filename);
             if(!filein) {
@@ -86,4 +106,7 @@ class InputReader{
 
 int main(){
     InputReader reader("test.txt");
+    vector<vector<int> > transactions = reader.getTransactions();
+    FPtree tree;
+    tree.scanDB(transactions);
 }
