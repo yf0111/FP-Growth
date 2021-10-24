@@ -1,14 +1,16 @@
 #include <iostream>
 #include <vector>
-#include <set>
+// #include <set>
 #include <string>
-#include <tuple>
+// #include <tuple>
 #include <fstream>
 #include <cmath>
 #include <iomanip>
 #include <algorithm>
 #include <map>
+// #include <iterator>
 using namespace std;
+typedef pair<string,int> mypair;
 
 struct FPnode{
     string name;
@@ -16,6 +18,13 @@ struct FPnode{
     FPnode* link;
     FPnode* parent;
     FPnode* child;
+    // FPnode(string name,FPnode* parent,int frequent =1):name(name),parent(parent),count(count){
+    //     link = NULL;
+    // }
+
+    bool isRoot(){
+        return (parent==NULL);
+    }
     void addCount(FPnode x){
             x.frequent += 1;
         }
@@ -28,12 +37,9 @@ class FPtree{
     private:
         FPnode* root;
         vector<int> headerTable; // maybe map??
-        long support; //min-support
+        int minSupport; //min-support
         map<string,int> Itemfrequent; 
-        // vector<vector<int>> transactions;
-    // FPtree(){
-
-    // }
+        vector<mypair> ItemfrequentVec;
     public:
         // void addCount(FPnode x){
         //     x.frequent += 1;
@@ -42,13 +48,95 @@ class FPtree{
         //     return x.frequent;
         // }
         
-        void scanDB(vector<vector<int>> transactions){
+        //traversal transactions and show 
+        void showTrans(vector<vector<int>> transactions){
             for(int i =0;i<transactions.size();i++){
                 for(int j=0;j<transactions[i].size();j++){
                     cout<<transactions[i][j];
                 }
                 cout<<endl;
             }
+        }
+        
+        // traversal frequent map and show 
+        void showMap(){
+            cout<<"showMap : "<<endl;
+            for(map<string, int>::iterator iter = Itemfrequent.begin(); iter != Itemfrequent.end(); iter++){
+                cout<<iter->first<<" : "<<iter->second<<endl;
+            }
+        }
+
+        void showVec(){
+            cout<<"showVec : "<<endl;
+            for(int i=0;i<ItemfrequentVec.size();i++){
+                cout<<ItemfrequentVec[i].first<<" : "<<ItemfrequentVec[i].second<<endl;
+            }
+        }
+
+        void setMinSupport(int x){
+            minSupport = x;
+        }
+
+        // scan the transactions-DB and count frequent of each item 
+        void scanDB(vector<vector<int>> transactions){
+            for ( const auto &nowRow : transactions){
+                for(const auto &nowItem : nowRow){
+                    stringstream  s;
+                    s<<nowItem;
+                    string nowName = s.str();
+                    Itemfrequent[nowName] += 1;
+                    // cout<<nowItem<<"\t";
+                }
+            }
+            checkFre();
+        }
+  
+        // check whether item frequent is bigger enough or not
+        void checkFre(){
+            map<string, int>::iterator iter;
+            for(auto iter = Itemfrequent.cbegin();iter!=Itemfrequent.cend();){
+                cout<<"in checkfre's for!"<<endl;
+                string name = (*iter).first;
+                int count = (*iter).second;
+                if( count < minSupport ){
+                    Itemfrequent.erase(iter++);
+                }
+                else{
+                    ++iter;
+                }
+            }
+            sortItem();
+        }
+
+        struct MySort{
+            public:
+                bool operator()(const mypair &p1,mypair &p2) const{
+                    return p1.second > p2.second;
+                }
+        };
+
+        //sort item frequent by map-value , decreasing
+        void sortItem(){
+            vector<mypair> tempVec(Itemfrequent.begin(),Itemfrequent.end());
+            sort(tempVec.begin(),tempVec.end(),MySort());
+            for(int i=0;i<tempVec.size();i++){
+                ItemfrequentVec.push_back(tempVec[i]);
+            }
+        }
+
+        // construction fptree
+        void constructionTree(){
+            // vector<mypair>::iterator it;
+            // for (it = ItemfrequentVec.begin(); it != ItemfrequentVec.end();it++){
+
+            // }
+            FPnode* curr = root;
+            for(int i=0;i<ItemfrequentVec.size();i++){
+                string name = ItemfrequentVec[i].first;
+                int count = ItemfrequentVec[i].second;
+                
+            }
+            bool isnew = true;
         }
 };
 
@@ -68,16 +156,6 @@ class InputReader{
                 exit(0);
             }
             analysize();
-
-            /* print all transaction*/ 
-
-            // for(int i=0;i<transactions.size();i++){
-            //     for(int j=0;j<transactions[i].size();j++){
-            //         cout<<transactions[i][j];
-            //     }
-            //     cout<<endl;
-            // }
-
             filein.close();
         }
         void analysize(){
@@ -108,5 +186,6 @@ int main(){
     InputReader reader("test.txt");
     vector<vector<int> > transactions = reader.getTransactions();
     FPtree tree;
+    tree.setMinSupport(2);
     tree.scanDB(transactions);
 }
