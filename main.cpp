@@ -1,50 +1,58 @@
 #include <iostream>
 #include <vector>
-// #include <set>
 #include <string>
-// #include <tuple>
 #include <fstream>
-#include <cmath>
 #include <iomanip>
 #include <algorithm>
 #include <map>
 #include <typeinfo>
-// #include <iterator>
+#include <list>
 using namespace std;
+
 typedef pair<string,int> mypair;
 typedef pair<int,int> item;
 
 struct FPnode{
     string name;
     int frequent;
-    FPnode* link;
     FPnode* parent;
-    FPnode* child;
-    FPnode(string name,FPnode* parent,int frequent =1):name(name),parent(parent),frequent(frequent){
-        link = NULL;
+    FPnode* sibling;
+    map<string,FPnode*> child;
+    
+    FPnode(string name,FPnode*parent,int frequent = 1):name(name), parent(parent), frequent(frequent) {
+        sibling = NULL;
+        child.clear();
     }
-
     bool isRoot(){
         return (parent==NULL);
     }
-    void addCount(FPnode x){
-            x.frequent += 1;
+
+    void dump(int k) { //?
+        if (isRoot()) {
+            printf("\nRoot \n");
         }
-    int getCount(FPnode x){
-        return x.frequent;
+        else {
+            cout<<"name : "<<name<<"\tfrequency : "<<frequent<<endl;
+        }
+        map<string, FPnode*>::iterator  it;
+        for(it = child.begin(); it != child.end(); it++) {
+            printf("|");
+            it->second->dump(k+1);
+        }
     }
 };
 
 class FPtree{
     private:
         FPnode* root;
-        vector<int> headerTable; // maybe map??
+        map<string,FPnode*> headerTable; // maybe map??
         int minSupport; //min-support
         map<string,int> Itemfrequent; // each item frequency
         vector<mypair> ItemfrequentVec; // each item frequency (DS:vector)
         vector<vector<int>> newTrans; // new transaction, after delete <minSupport item
         vector<vector<item>> sortTra; // just for sorting new transaction
         vector<vector<int>> sortedTra; //last transaction, after sorting newTrans
+
     public:
         // void addCount(FPnode x){
         //     x.frequent += 1;
@@ -52,7 +60,6 @@ class FPtree{
         // int getCount(FPnode x){
         //     return x.frequent;
         // }
-        
         //traversal transactions and show 
         void showTrans(vector<vector<int>> transactions){
             for(int i =0;i<transactions.size();i++){
@@ -135,6 +142,10 @@ class FPtree{
             sortItem();
         }
 
+        FPnode* getRoot(){
+            return root;
+        }
+
         struct MySort{
             public:
                 bool operator()(const mypair &p1,mypair &p2) const{
@@ -197,26 +208,58 @@ class FPtree{
                     // cout<<sortTra[i][j].first;
                     row.push_back(sortTra[i][j].first);
                 }
-                cout<<"\n";
                 sortedTra.push_back(row);
                 row.clear();
             }
             
         }
 
+        vector<vector<int>> getSortedTra(){
+            return sortedTra;
+        }
+        
         // construction fptree
-        void constructionTree(){
-            // FPnode* cur = &Root; //pointer cur point to root's address
-            // bool isNew = true;
-            // for(int i=0;i<ItemfrequentVec.size();i++){
-            //     string name = ItemfrequentVec[i].first;
-            //     int count = ItemfrequentVec[i].second;
-                
-            // }
+        void myContrust(FPnode *root){
+            for(int i=0;i<sortedTra.size();i++){
+                FPnode *curr = root;
+                for(int j=0;j<sortedTra[i].size();j++){
+                    stringstream ss;
+                    ss<<sortedTra[i][j];
+                    string s = ss.str(); // s == name
+                    map<string,FPnode*>::iterator it = curr->child.begin();
+                    while(it!=curr->child.end()){
+                        // cout<<"check ! "<<it->first<<endl;
+                        if(it->first == s){
+                            // cout<<"no need to create new node !"<<endl;
+                            curr = it->second;
+                            curr->frequent +=1;
+                            break;
+                        }
+                        it++;
+                    }
+                    if(it==curr->child.end()){
+                        // cout<<"create new node! name : "<<s<<endl;
+                        curr->child[s] = new FPnode(s,curr,1);
+                        curr = curr->child[s];
+                    }
+                }
+            }
+        }
+
+        void traversal(FPnode *current){
+            if(current){
+                cout<<current->name<<"\t";
+                map<string,FPnode*>::iterator it = current->child.begin();
+                while(it != current->child.end()) {
+                    FPnode* next = it->second;
+                    cout<<"\n";
+                    traversal(next);
+                    it++;
+                }
+            }
         }
 
 
-        
 };
 
 
@@ -225,9 +268,6 @@ class InputReader{
         ifstream filein;
         vector<vector<int>> transactions;
     public:
-        InputReader(){
-            cout<<"Wanna show something?"<<endl;
-        }
         InputReader(string filename) {
             filein.open(filename);
             if(!filein) {
@@ -264,8 +304,11 @@ class InputReader{
 int main(){
     InputReader reader("test.txt");
     vector<vector<int> > transactions = reader.getTransactions();
+    FPnode root("root",NULL);
     FPtree tree;
     tree.setMinSupport(2);
     tree.scanDB(transactions);
     tree.generateNewTrans(transactions);
+    tree.myContrust(&root);
+    tree.traversal(&root);
 }
