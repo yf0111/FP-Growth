@@ -11,6 +11,7 @@ using namespace std;
 
 typedef pair<string,int> mypair;
 typedef pair<int,int> item;
+int const MAX = 10000;
 
 struct FPnode{
     string name;
@@ -107,14 +108,86 @@ class FPtree{
             }
         }
 
+        void showSibling(){
+            cout<<"show sibling : "<<endl;
+            map<string,FPnode*>::iterator iter = headerTable.find("7");
+            if( iter != headerTable.end()){
+                FPnode *curr = iter->second;
+                while(curr != NULL){
+                    cout<<"-------------------------"<<endl;
+                    cout<<"curr node name : "<<curr->name<<endl;
+                    cout<<"parent name : "<<curr->parent->name<<endl;
+                    cout<<"-------------------------"<<endl;
+                    curr = curr->sibling;
+                }
+            }
+        }
         void showHeader(){
             map<string,FPnode*>::iterator iter = headerTable.begin();
             while(iter != headerTable.end()){
                 cout<<"node name : "<<iter->first<<endl;
                 iter++;
             }
-
         }
+
+        /*  find one path (most left) */
+        /*
+        iter = headerTable.find("2");
+            if(iter!=headerTable.end()){
+                FPnode *node = iter->second;
+                while(node != NULL){
+                    FPnode *parent = node->parent;
+                    cout<<"node name : "<<node->name<<endl;
+                    node = parent;
+                }
+            }
+        */
+
+        //extract item (in sortedTra) frequent prefix patten
+        //conditional patten base
+        void findPrefixPath(){
+            map<string,FPnode*>::iterator iter ;
+            for(iter = headerTable.end();--iter!=headerTable.begin();){
+                // every time fix one item , find all prefix path
+                map<vector<string>,int> prefix;
+                prefix.clear();
+                //[a,b,c,d]:2 (prefix path:prefix frequent)
+                //prefix's frequent depand on leaf node's frequency
+                FPnode *curr = iter->second;
+                FPnode *currCpy = curr;
+                cout<<"current find : "<<iter->first<<endl;
+                while(currCpy != NULL){
+                    //find all path for this node
+                    map<vector<string>,int> prefix;
+                    prefix.clear();
+                    vector<string> path;
+                    path.clear();
+                    int minFre = MAX; 
+                    int nowFre = MAX;
+                    while(curr != NULL && curr->parent->name !="root"){
+                        //one path for each node
+                        nowFre = curr->frequent;
+                        if (nowFre<minFre){
+                            minFre = nowFre;
+                        }
+                        path.push_back(curr->parent->name);
+                        curr = curr->parent;
+                    }
+                    prefix[path] = minFre;
+                    cout<<"now prefix : ";
+                    for(int i=0;i<path.size();i++){
+                        cout<<path[i];
+                    }
+                    cout<<"\t ,freq : "<<prefix[path]<<endl;
+                    curr = currCpy -> sibling;
+                    currCpy = curr;
+                    /* path : leaf -> root , can use <vec.rbegin()> */
+                    /* <vec.rbegin()> : return a reverse iterator , point to vec.end() */
+                }
+            }
+        }
+
+
         // scan the transactions-DB and count frequent of each item 
         void scanDB(vector<vector<int>> transactions){
             for ( const auto &nowRow : transactions){
@@ -143,10 +216,6 @@ class FPtree{
                 }
             }
             sortItem();
-        }
-
-        FPnode* getRoot(){
-            return root;
         }
 
         struct MySort{
@@ -244,6 +313,9 @@ class FPtree{
                         // cout<<"create new node! name : "<<s<<endl;
                         curr->child[s] = new FPnode(s,curr,1);
                         curr = curr->child[s];
+                        if(headerTable.find(s) != headerTable.end()){
+                            curr->sibling = headerTable[s];
+                        }
                         headerTable[s] = curr;
                     }
                 }
@@ -264,14 +336,6 @@ class FPtree{
                 }
             }
         }
-
-        //extract item (in sortedTra) frequent prefix patten
-        void findPrefixPath(FPnode* node){
-            map<vector<string>,int> prefix; // [a,b,c,d]:2 (prefix path:prefix frequent)
-            //prefix's frequent depand on leaf node's frequency
-            prefix.clear();
-        }
-
 
 };
 
@@ -323,5 +387,5 @@ int main(){
     tree.scanDB(transactions);
     tree.generateNewTrans(transactions);
     tree.myContrust(&root);
-    
+    tree.findPrefixPath();
 }
