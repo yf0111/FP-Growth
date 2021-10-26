@@ -54,12 +54,7 @@ class FPtree{
         vector<vector<int>> sortedTra; //last transaction, after sorting newTrans
 
     public:
-        // void addCount(FPnode x){
-        //     x.frequent += 1;
-        // }
-        // int getCount(FPnode x){
-        //     return x.frequent;
-        // }
+        
         //traversal transactions and show 
         void showTrans(vector<vector<int>> transactions){
             for(int i =0;i<transactions.size();i++){
@@ -112,6 +107,14 @@ class FPtree{
             }
         }
 
+        void showHeader(){
+            map<string,FPnode*>::iterator iter = headerTable.begin();
+            while(iter != headerTable.end()){
+                cout<<"node name : "<<iter->first<<endl;
+                iter++;
+            }
+
+        }
         // scan the transactions-DB and count frequent of each item 
         void scanDB(vector<vector<int>> transactions){
             for ( const auto &nowRow : transactions){
@@ -217,7 +220,7 @@ class FPtree{
         vector<vector<int>> getSortedTra(){
             return sortedTra;
         }
-        
+
         // construction fptree
         void myContrust(FPnode *root){
             for(int i=0;i<sortedTra.size();i++){
@@ -241,6 +244,7 @@ class FPtree{
                         // cout<<"create new node! name : "<<s<<endl;
                         curr->child[s] = new FPnode(s,curr,1);
                         curr = curr->child[s];
+                        headerTable[s] = curr;
                     }
                 }
             }
@@ -248,15 +252,24 @@ class FPtree{
 
         void traversal(FPnode *current){
             if(current){
-                cout<<current->name<<"\t";
+                cout<<"-------------------------"<<endl;
+                cout<<"name : "<<current->name<<"\t";
+                cout<<"count : "<<current->frequent<<"\n";
+                cout<<"-------------------------"<<endl;
                 map<string,FPnode*>::iterator it = current->child.begin();
                 while(it != current->child.end()) {
                     FPnode* next = it->second;
-                    cout<<"\n";
                     traversal(next);
                     it++;
                 }
             }
+        }
+
+        //extract item (in sortedTra) frequent prefix patten
+        void findPrefixPath(FPnode* node){
+            map<vector<string>,int> prefix; // [a,b,c,d]:2 (prefix path:prefix frequent)
+            //prefix's frequent depand on leaf node's frequency
+            prefix.clear();
         }
 
 
@@ -310,5 +323,5 @@ int main(){
     tree.scanDB(transactions);
     tree.generateNewTrans(transactions);
     tree.myContrust(&root);
-    tree.traversal(&root);
+    
 }
