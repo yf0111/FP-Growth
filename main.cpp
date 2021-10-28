@@ -27,20 +27,6 @@ struct FPnode{
     bool isRoot(){
         return (parent==NULL);
     }
-
-    void dump(int k) { //?
-        if (isRoot()) {
-            printf("\nRoot \n");
-        }
-        else {
-            cout<<"name : "<<name<<"\tfrequency : "<<frequent<<endl;
-        }
-        map<string, FPnode*>::iterator  it;
-        for(it = child.begin(); it != child.end(); it++) {
-            printf("|");
-            it->second->dump(k+1);
-        }
-    }
 };
 
 class FPtree{
@@ -130,24 +116,11 @@ class FPtree{
             }
         }
 
-        /*  find one path (most left) */
-        /*
-        iter = headerTable.find("2");
-            if(iter!=headerTable.end()){
-                FPnode *node = iter->second;
-                while(node != NULL){
-                    FPnode *parent = node->parent;
-                    cout<<"node name : "<<node->name<<endl;
-                    node = parent;
-                }
-            }
-        */
-
         //extract item (in sortedTra) frequent prefix patten
         //conditional patten base
         void findPrefixPath(){
             map<string,FPnode*>::iterator iter ;
-            for(iter = headerTable.end();--iter!=headerTable.begin();){
+            for(iter = headerTable.end();iter--!=headerTable.begin();){
                 // every time fix one item , find all prefix path
                 map<vector<string>,int> prefix;
                 prefix.clear();
@@ -158,8 +131,6 @@ class FPtree{
                 cout<<"current find : "<<iter->first<<endl;
                 while(currCpy != NULL){
                     //find all path for this node
-                    map<vector<string>,int> prefix;
-                    prefix.clear();
                     vector<string> path;
                     path.clear();
                     int minFre = MAX; 
@@ -173,20 +144,95 @@ class FPtree{
                         path.push_back(curr->parent->name);
                         curr = curr->parent;
                     }
-                    prefix[path] = minFre;
-                    cout<<"now prefix : ";
-                    for(int i=0;i<path.size();i++){
-                        cout<<path[i];
+                    if(!path.empty()){
+                        prefix[path] = minFre;
                     }
-                    cout<<"\t ,freq : "<<prefix[path]<<endl;
+                    
+                    /* just for check conditional patten base (path & fre)*/
+                    // cout<<"now path : ";
+                    // for(int i=0;i<path.size();i++){
+                    //     cout<<path[i];
+                    // }
+                    // cout<<"\t ,freq : "<<prefix[path]<<endl;                    
+
                     curr = currCpy -> sibling;
                     currCpy = curr;
-                    /* path : leaf -> root , can use <vec.rbegin()> */
-                    /* <vec.rbegin()> : return a reverse iterator , point to vec.end() */
                 }
+
+                /* just for check conditional patten base (prefix)*/
+                // map<vector<string>,int>::iterator s;
+                // s = prefix.begin();
+                // while(s!=prefix.end()){
+                //     vector<string> p = s->first;
+                //     if(s->second==0){
+                //         continue;
+                //     }
+                //     for(int i=0;i<p.size();i++){
+                //         cout<<p[i];
+                //     }
+                //     cout<<","<<s->second<<endl;
+                //     s++;
+                // }
+
+                getFrePatt(prefix,iter->first);
             }
         }
 
+        void getFrePatt(map<vector<string>,int> prefix,string fix){
+            FPnode temp("temp",NULL);
+            int nodeFre = Itemfrequent[fix];
+            map<vector<string>,int>::iterator it;
+            it = prefix.begin();
+            while(it!=prefix.end()){ //each row of prefix           
+                FPnode *curr = &temp;
+                vector<string> tag = it->first;
+                // cout<<"current tag:  ";
+                // for(int i=0;i<tag.size();i++){
+                //     cout<<tag[i];
+                // }
+                // cout<<"\n";
+
+                int eachFre = it->second;
+                for(int i=tag.size()-1;i>=0;i--){
+                    map<string,FPnode*>::iterator iter = curr->child.begin();
+                    while(iter!=curr->child.end()){
+                        if(iter->first == tag[i]){
+                            // cout<<tag[i]<<" same! \n";
+                            curr = curr->child[tag[i]];
+                            curr->frequent += eachFre;
+                            break;
+                        }
+                        iter++;
+                    }
+                    if(iter == curr->child.end()){
+                        // cout<<"create "<<tag[i]<<endl;
+                        curr->child[tag[i]] = new FPnode(tag[i],curr,eachFre);
+                        curr = curr->child[tag[i]];
+                    }
+                }
+                it++;
+            }
+
+            FPnode *checkMinSupport = &temp;
+            checkMin(checkMinSupport);
+            /* just for check !*/
+            FPnode *check = &temp;
+            traversal(check);
+        }
+
+        void checkMin(FPnode *checkMinSupport){
+            if(checkMinSupport){
+                map<string,FPnode*>::iterator checkit = checkMinSupport->child.begin();
+                while(checkit != checkMinSupport->child.end()) {
+                    FPnode* next = checkit->second;
+                    if(next->frequent<minSupport){
+                        checkMinSupport->child.erase(checkit);
+                    }
+                    checkMin(next);
+                    checkit++;
+                }
+            }
+        }
 
         // scan the transactions-DB and count frequent of each item 
         void scanDB(vector<vector<int>> transactions){
@@ -332,6 +378,7 @@ class FPtree{
                 while(it != current->child.end()) {
                     FPnode* next = it->second;
                     traversal(next);
+                    // cout<<"next name : " <<next->name<<endl;
                     it++;
                 }
             }
@@ -379,7 +426,7 @@ class InputReader{
 
 
 int main(){
-    InputReader reader("test.txt");
+    InputReader reader("test3.txt");
     vector<vector<int> > transactions = reader.getTransactions();
     FPnode root("root",NULL);
     FPtree tree;
