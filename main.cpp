@@ -11,6 +11,8 @@ using namespace std;
 
 typedef pair<string,int> mypair;
 typedef pair<int,int> item;
+typedef pair<vector<string>,int> eaTra ;
+
 int const MAX = 10000;
 
 struct FPnode{
@@ -39,6 +41,10 @@ class FPtree{
         vector<vector<int>> newTrans; // new transaction, after delete <minSupport item
         vector<vector<item>> sortTra; // just for sorting new transaction
         vector<vector<int>> sortedTra; //last transaction, after sorting newTrans
+        vector<eaTra> frePatt; // frequent patten
+        vector<string> a; // check if double-count or not
+
+        string helper=""; // record the ancient path when find frequent pattern
 
     public:
         
@@ -116,6 +122,25 @@ class FPtree{
             }
         }
 
+        void showFrePatt(){
+            auto it = frePatt.begin();
+            cout <<"--------------! show Frequent Pattern !--------------"<<endl;
+            while(it!=frePatt.end()){
+                for(int i=0;i<it->first.size();i++){
+                    cout<<it->first[i];
+                }
+                cout<<" , "<<it->second;
+                it++;
+            }
+        }
+
+        void showA(){
+            cout<<"--------------! a !--------------"<<endl;
+            for(int i=0;i<a.size();i++){
+                cout<<a[i];
+            }
+        }
+
         //extract item (in sortedTra) frequent prefix patten
         //conditional patten base
         void findPrefixPath(){
@@ -128,7 +153,7 @@ class FPtree{
                 //prefix's frequent depand on leaf node's frequency
                 FPnode *curr = iter->second;
                 FPnode *currCpy = curr;
-                cout<<"current find : "<<iter->first<<endl;
+                // cout<<"current find : "<<iter->first<<endl;
                 while(currCpy != NULL){
                     //find all path for this node
                     vector<string> path;
@@ -174,13 +199,12 @@ class FPtree{
                 //     s++;
                 // }
 
-                getFrePatt(prefix,iter->first);
+                getFrePattBas(prefix,iter->first);
             }
         }
 
-        void getFrePatt(map<vector<string>,int> prefix,string fix){
+        void getFrePattBas(map<vector<string>,int> prefix,string fix){
             FPnode temp("temp",NULL);
-            int nodeFre = Itemfrequent[fix];
             map<vector<string>,int>::iterator it;
             it = prefix.begin();
             while(it!=prefix.end()){ //each row of prefix           
@@ -213,13 +237,22 @@ class FPtree{
                 it++;
             }
 
+            // delete item that < minSupport
             FPnode *checkMinSupport = &temp;
             checkMin(checkMinSupport);
+
             /* just for check !*/
-            FPnode *check = &temp;
-            traversal(check);
+            // FPnode *check = &temp;
+            // traversal(check);
+
+            FPnode *gene = &temp;
+            generateFrePa(gene,fix);
+            // cout<<" ----- e n d -----\n";
+            /* do somthing....*/
+            /*should use item-FP-tree to generate Frequent Pattern*/
         }
 
+        // delete item that < minSupport
         void checkMin(FPnode *checkMinSupport){
             if(checkMinSupport){
                 map<string,FPnode*>::iterator checkit = checkMinSupport->child.begin();
@@ -231,6 +264,89 @@ class FPtree{
                     checkMin(next);
                     checkit++;
                 }
+            }
+        }
+
+        // use item-FP-tree to generate Frequent Pattern
+        void generateFrePa(FPnode *tempRoot,string fix){
+            // cout<<"now node : "<<tempRoot->name<<endl;
+            if(tempRoot->name!="temp"){
+                helper = helper.append(tempRoot->name);
+                // cout<<"helper : "<<helper<<endl;
+            }
+            if(tempRoot){
+                map<string,FPnode*>::iterator iter = tempRoot->child.begin();
+                string s1=""; // ancient+self+fix
+                string s2=""; // self+fix
+                if(tempRoot->child.empty()){
+                    if(tempRoot->name != "temp"){
+                        vector<string> convert1;
+                        convert1.clear();
+                        s1 = "\n{ "+helper+fix+" }";
+                        // cout<<s1;
+                        convert1.push_back(s1);
+                        vector<string>::iterator it1 = find(a.begin(),a.end(),s1);
+                        if(it1==a.end()){
+                            a.push_back(s1);
+                            frePatt.push_back(make_pair(convert1,tempRoot->frequent));
+                        }
+                        
+                        vector<string> convert2;
+                        convert2.clear();
+                        s2 = "\n{ "+tempRoot->name+fix+" }";
+                        // cout<<s2;
+                        convert2.push_back(s2);
+                        vector<string>::iterator it2 = find(a.begin(),a.end(),s2);
+                        if(it2==a.end()){
+                            a.push_back(s2);
+                            frePatt.push_back(make_pair(convert2,tempRoot->frequent));
+                        }
+                    }
+                }
+                if(!tempRoot->child.empty()){
+                    while(iter != tempRoot->child.end()) {
+                        if(tempRoot->name!="temp"){
+                            vector<string> convert1;
+                            convert1.clear();
+                            s1 ="\n{ "+helper+fix+" }";
+                            convert1.push_back(s1);
+                            // cout<<s1;
+                            vector<string>::iterator it1 = find(a.begin(),a.end(),s1);
+                            if(it1==a.end()){
+                                a.push_back(s1);
+                                frePatt.push_back(make_pair(convert1,tempRoot->frequent));
+                            }
+
+                            vector<string> convert2;
+                            convert2.clear();
+                            s2 = "\n{ "+tempRoot->name+fix+" }";
+                            // cout<<s2;
+                            convert2.push_back(s2);
+                            vector<string>::iterator it2 = find(a.begin(),a.end(),s2);
+                            if(it2==a.end()){
+                                a.push_back(s2);
+                                frePatt.push_back(make_pair(convert2,tempRoot->frequent));
+                            }
+                        }
+
+                        FPnode* next = iter->second;
+                        generateFrePa(next,fix);
+                        helper.clear();
+                        iter++;
+                    }
+                }
+            }
+        }
+
+        void addOneItem(){
+            auto it = ItemfrequentVec.begin();
+            while(it!=ItemfrequentVec.end()){
+                vector<string> s;
+                s.clear();
+                string edit ="\n{ "+it->first+" }";
+                s.push_back(edit);
+                frePatt.push_back(make_pair(s,it->second));
+                it++;
             }
         }
 
@@ -374,6 +490,9 @@ class FPtree{
                 cout<<"name : "<<current->name<<"\t";
                 cout<<"count : "<<current->frequent<<"\n";
                 cout<<"-------------------------"<<endl;
+                if(current->child.empty()){
+                    cout<<"leaf :q ! ********"<<endl;
+                }
                 map<string,FPnode*>::iterator it = current->child.begin();
                 while(it != current->child.end()) {
                     FPnode* next = it->second;
@@ -433,6 +552,8 @@ int main(){
     tree.setMinSupport(2);
     tree.scanDB(transactions);
     tree.generateNewTrans(transactions);
+    tree.addOneItem();
     tree.myContrust(&root);
     tree.findPrefixPath();
+    tree.showFrePatt();
 }
