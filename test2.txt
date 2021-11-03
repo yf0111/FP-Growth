@@ -1,9 +1,0 @@
-milk	bread	bear
-bread	coffee
-bread	egg
-milk	bread	coffee
-milk	egg
-bread	egg
-milk	egg
-milk	bread	egg	bear
-milk	bread	egg

@@ -127,7 +127,7 @@ class FPtree{
             cout <<"--------------! show Frequent Pattern !--------------"<<endl;
             while(it!=frePatt.end()){
                 for(int i=0;i<it->first.size();i++){
-                    cout<<it->first[i];
+                    cout<<" "<<it->first[i]<<" ";
                 }
                 cout<<" , "<<it->second;
                 it++;
@@ -272,6 +272,7 @@ class FPtree{
             // cout<<"now node : "<<tempRoot->name<<endl;
             if(tempRoot->name!="temp"){
                 helper = helper.append(tempRoot->name);
+                helper = helper.append(" , ");
                 // cout<<"helper : "<<helper<<endl;
             }
             if(tempRoot){
@@ -293,7 +294,7 @@ class FPtree{
                         
                         vector<string> convert2;
                         convert2.clear();
-                        s2 = "\n{ "+tempRoot->name+fix+" }";
+                        s2 = "\n{ "+tempRoot->name+" , "+fix+" }";
                         // cout<<s2;
                         convert2.push_back(s2);
                         vector<string>::iterator it2 = find(a.begin(),a.end(),s2);
@@ -319,7 +320,7 @@ class FPtree{
 
                             vector<string> convert2;
                             convert2.clear();
-                            s2 = "\n{ "+tempRoot->name+fix+" }";
+                            s2 = "\n{ "+tempRoot->name+" , "+fix+" }";
                             // cout<<s2;
                             convert2.push_back(s2);
                             vector<string>::iterator it2 = find(a.begin(),a.end(),s2);
